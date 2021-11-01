@@ -143,6 +143,7 @@ namespace MatchThree
             if(lines.Count == 0)
                 return false;
 
+            //Поиск пересечений
             int mult = 5;
             bool direction; //false - horizontal, true - vertical
             List<Index> crossList = new List<Index>();
@@ -164,9 +165,7 @@ namespace MatchThree
                                     {
                                         Index sameIndexJ = new Index(lines[j].Begin.J, t);
                                         if (sameIndexI == sameIndexJ)
-                                        {
                                             crossList.Add(sameIndexI);
-                                        }
                                     }
                                 }
                             }
@@ -208,7 +207,7 @@ namespace MatchThree
                     if ((line.End.J - line.Begin.J + 1 == 4) && (checkCross != true))
                     {
                         Random random = new Random();
-                        direction = Convert.ToBoolean((int)random.Next(0,1));
+                        direction = Convert.ToBoolean((int)random.Next(0, 2));
                         if(direction)
                             matrix[line.Begin.I, line.Begin.J] = colorNumber + 15;
                         else
@@ -245,7 +244,7 @@ namespace MatchThree
                     if ((line.End.I - line.Begin.I + 1 == 4) && (checkCross != true))
                     {
                         Random random = new Random();
-                        direction = Convert.ToBoolean((int)random.Next(0, 1));
+                        direction = Convert.ToBoolean((int)random.Next(0, 2));
                         if (direction)
                             matrix[line.Begin.I, line.Begin.J] = colorNumber + 15;
                         else
@@ -256,6 +255,7 @@ namespace MatchThree
                 score += (count - 1) * mult;
             }
 
+            //Активация всех бонусов по порядку
             while (qBonuses.Count != 0)
             {
                 Bonus tempBonus = qBonuses.Dequeue();
@@ -497,6 +497,4 @@ namespace MatchThree
         }
 
     }
-
-
 }
