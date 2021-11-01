@@ -404,7 +404,6 @@ namespace MatchThree
     abstract class Bonus
     { 
         public abstract Index Center { get; set; }  
-        //public bool IsVert { get; set; }
     }
 
     class Bomb : Bonus
