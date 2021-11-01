@@ -98,7 +98,7 @@ namespace MatchThree
                             tempMatrix[i, k] = -1;
                         }
                             
-                        lines.Add(new Line(new Index(j, i), new Index(j + length - 1, i)));
+                        lines.Add(new Line(new Index(j, i), new Index(j + length - 1, i), false));
                     }
                 }
             }
@@ -135,7 +135,7 @@ namespace MatchThree
                             tempMatrix[k, j] = -1;
                         }
                             
-                        lines.Add(new Line(new Index(j, i), new Index(j, i + length - 1)));
+                        lines.Add(new Line(new Index(j, i), new Index(j, i + length - 1), true));
                     }               
                 }
             }
@@ -145,24 +145,67 @@ namespace MatchThree
 
             int mult = 5;
             bool direction; //false - horizontal, true - vertical
+            List<Index> crossList = new List<Index>();
+
+            if (lines.Count() >= 2)
+                for (int i = 0; i < lines.Count() - 1; i++)
+                {
+                    int colorNumber = matrix[lines[i].Begin.I, lines[i].Begin.J];
+                    for (int j = i + 1; j < lines.Count(); j++)
+                    {
+                        if (!lines[i].IsVert)
+                        {
+                            if (lines[j].IsVert)
+                            {
+                                for (int k = lines[i].Begin.J; k <= lines[i].End.J; k++)
+                                {
+                                    Index sameIndexI = new Index(k, lines[i].Begin.I);
+                                    for (int t = lines[j].Begin.I; t <= lines[j].End.I; t++)
+                                    {
+                                        Index sameIndexJ = new Index(lines[j].Begin.J, t);
+                                        if (sameIndexI == sameIndexJ)
+                                        {
+                                            crossList.Add(sameIndexI);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
             foreach (Line line in lines)
             {
                 int count = 0;
                 int colorNumber = matrix[line.Begin.I, line.Begin.J];
+                
                 if (line.Begin.I == line.End.I)
                 {
-                    for (int i = line.Begin.J; i <= line.End.J; ++i)
+                    bool checkCross = false;
+                    for (int i = line.Begin.J; i <= line.End.J; i++)
                     {
                         matrix[line.Begin.I, i] = -1;
                         if (ElementRemoved != null)
                             ElementRemoved(i, line.End.I);
                         count++;
+
+                        if(crossList.Count() != 0)
+                            for (int k = 0; k < crossList.Count(); k++)
+                            {
+                                Index cross = new Index(i , line.Begin.I);
+                                if (crossList[k] == cross)
+                                {
+                                    matrix[line.Begin.I, i] = colorNumber + 5;
+                                    checkCross = true;
+                                }
+                            }
                     }
                     //Bomb spawn
-                    if (line.End.J - line.Begin.J + 1 >= 5)
+                    if ((line.End.J - line.Begin.J + 1 >= 5) && (checkCross != true))
                         matrix[line.Begin.I, line.Begin.J] = colorNumber + 5;
                     //LineDest spawn
-                    if (line.End.J - line.Begin.J + 1 == 4)
+                    if ((line.End.J - line.Begin.J + 1 == 4) && (checkCross != true))
                     {
                         Random random = new Random();
                         direction = Convert.ToBoolean((int)random.Next(0,1));
@@ -174,20 +217,32 @@ namespace MatchThree
                 }
                 else
                 {
+                    bool checkCross = false;
                     for (int i = line.Begin.I; i <= line.End.I; ++i)
                     {
                         matrix[i, line.Begin.J] = -1;
                         if (ElementRemoved != null)
                             ElementRemoved(line.Begin.J, i);
                         count++;
+
+                        if (crossList.Count() != 0)
+                            for (int k = 0; k < crossList.Count(); k++)
+                            {
+                                Index cross = new Index(line.Begin.J, i);
+                                if (crossList[k] == cross)
+                                {
+                                    matrix[i, line.Begin.J] = colorNumber + 5;
+                                    checkCross = true;
+                                }
+                            }
                     }
                     //Bomb spawn
-                    if (line.End.I - line.Begin.I + 1 >= 5)
+                    if ((line.End.I - line.Begin.I + 1 >= 5) && (checkCross != true))
                     {
                         matrix[line.Begin.I, line.Begin.J] = colorNumber + 5;
                     }
                     //LineDest spawn
-                    if (line.End.I - line.Begin.I + 1 == 4)
+                    if ((line.End.I - line.Begin.I + 1 == 4) && (checkCross != true))
                     {
                         Random random = new Random();
                         direction = Convert.ToBoolean((int)random.Next(0, 1));
@@ -316,17 +371,13 @@ namespace MatchThree
     public class Line
     {
         Index begin, end;
+        bool isVert;
 
-        public Line()
-        {
-            begin = new Index();
-            end = new Index();
-        }
-
-        public Line(Index newBegin, Index newEnd)
+        public Line(Index newBegin, Index newEnd, bool direction)
         {
             begin = newBegin;
             end = newEnd;
+            isVert = direction;
         }
 
         public Index Begin 
@@ -341,12 +392,19 @@ namespace MatchThree
             
             set { end = new Index(value); } 
         }
+
+        public bool IsVert
+        {
+            get { return isVert; }
+
+            set { isVert = value; }
+        }
     }
 
     abstract class Bonus
     { 
         public abstract Index Center { get; set; }  
-        public bool IsVert { get; set; }
+        //public bool IsVert { get; set; }
     }
 
     class Bomb : Bonus
@@ -396,12 +454,6 @@ namespace MatchThree
     {
         int x, y;
 
-        public Index()
-        {
-            x = 0;
-            y = 0;
-        }
-
         public Index(int j, int i)
         {
             x = j;
@@ -412,6 +464,22 @@ namespace MatchThree
         {
             x = t.x;
             y = t.y;
+        }
+
+        public static bool operator ==(Index i1, Index i2)
+        {
+            if (i1.I == i2.I && i1.J == i2.J)
+                return true;
+            else
+                return false;
+        }
+
+        public static bool operator !=(Index i1, Index i2)
+        {
+            if (i1.I != i2.I || i1.J != i2.J)
+                return true;
+            else
+                return false;
         }
 
         public int J 
